@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Rocket Thrust Calculator</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0b1a2e;
+color:white;
+text-align:center;
+padding:30px;
+}
+
+.container{
+background:#162b4d;
+padding:30px;
+border-radius:10px;
+width:500px;
+margin:auto;
+}
+
+input{
+width:90%;
+padding:8px;
+margin:8px;
+}
+
+button{
+padding:10px 15px;
+margin:5px;
+background:#ff6b00;
+border:none;
+color:white;
+cursor:pointer;
+}
+
+.result{
+margin-top:20px;
+font-size:18px;
+}
+
+canvas{
+background:white;
+margin-top:20px;
+border-radius:8px;
+}
+
+/* rocket animation */
+
+.rocket{
+width:80px;
+animation: launch 2s infinite alternate;
+}
+
+@keyframes launch{
+0%{transform:translateY(0);}
+100%{transform:translateY(-20px);}
+}
+
+/* formula animation */
+
+.formulaBox{
+background:white;
+color:black;
+padding:15px;
+border-radius:8px;
+margin-top:15px;
+opacity:0;
+transform:translateY(20px);
+transition:all 0.6s ease;
+text-align:left;
+}
+
+.formulaBox.show{
+opacity:1;
+transform:translateY(0);
+}
+
+.formula{
+font-size:20px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+.calcStep{
+margin:4px 0;
+font-family:monospace;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>🚀 Rocket Thrust Calculator</h1>
+
+<img src="https://cdn-icons-png.flaticon.com/512/3212/3212608.png" class="rocket">
+
+<div class="container">
+
+<input id="m" placeholder="Mass Flow Rate (kg/s)">
+<input id="ve" placeholder="Exhaust Velocity (m/s)">
+<input id="pe" placeholder="Exit Pressure (Pa)">
+<input id="pa" placeholder="Ambient Pressure (Pa)">
+<input id="ae" placeholder="Exit Area (m²)">
+
+<br>
+
+<button onclick="calculate()">Calculate</button>
+<button onclick="resetFields()">Reset</button>
+<button onclick="loadExample()">Example</button>
+<button onclick="saveResult()">Save Result</button>
+
+<div class="result" id="output"></div>
+
+<div id="formulaDisplay" class="formulaBox"></div>
+
+<canvas id="chart" width="400" height="200"></canvas>
+
+</div>
+
+<script>
+
+let chart;
+
+function calculate(){
+
+let m=parseFloat(document.getElementById("m").value);
+let ve=parseFloat(document.getElementById("ve").value);
+let pe=parseFloat(document.getElementById("pe").value);
+let pa=parseFloat(document.getElementById("pa").value);
+let ae=parseFloat(document.getElementById("ae").value);
+
+if(isNaN(m)||isNaN(ve)||isNaN(pe)||isNaN(pa)||isNaN(ae)){
+alert("Please enter valid numbers");
+return;
+}
+
+let momentum=m*ve;
+let pressure=(pe-pa)*ae;
+let thrust=momentum+pressure;
+
+document.getElementById("output").innerHTML=
+"Momentum Thrust: "+momentum.toFixed(2)+" N <br>"+
+"Pressure Thrust: "+pressure.toFixed(2)+" N <br>"+
+"<b>Total Thrust: "+thrust.toFixed(2)+" N</b>";
+
+displayFormula(m,ve,pe,pa,ae,momentum,pressure,thrust);
+
+drawGraph(momentum,pressure,thrust);
+
+}
+
+function resetFields(){
+
+document.getElementById("m").value="";
+document.getElementById("ve").value="";
+document.getElementById("pe").value="";
+document.getElementById("pa").value="";
+document.getElementById("ae").value="";
+document.getElementById("output").innerHTML="";
+document.getElementById("formulaDisplay").classList.remove("show");
+document.getElementById("formulaDisplay").innerHTML="";
+
+if(chart) chart.destroy();
+
+}
+
+function loadExample(){
+
+document.getElementById("m").value=20;
+document.getElementById("ve").value=3200;
+document.getElementById("pe").value=50000;
+document.getElementById("pa").value=101000;
+document.getElementById("ae").value=0.5;
+
+}
+
+function saveResult(){
+
+let result=document.getElementById("output").innerText;
+
+if(result===""){
+alert("Calculate thrust first!");
+return;
+}
+
+localStorage.setItem("rocketThrustResult",result);
+
+alert("Result Saved!");
+
+}
+
+function drawGraph(momentum,pressure,thrust){
+
+let ctx=document.getElementById("chart");
+
+if(chart) chart.destroy();
+
+chart=new Chart(ctx,{
+type:"bar",
+data:{
+labels:["Momentum Thrust","Pressure Thrust","Total Thrust"],
+datasets:[{
+label:"Thrust (N)",
+data:[momentum,pressure,thrust],
+backgroundColor:"black"
+}]
+},
+options:{
+plugins:{
+legend:{
+labels:{
+color:"black",
+font:{size:14}
+}
+}
+},
+scales:{
+x:{
+ticks:{
+color:"black",
+font:{size:14}
+}
+},
+y:{
+ticks:{
+color:"black",
+font:{size:14}
+}
+}
+}
+}
+});
+
+}
+
+function displayFormula(m,ve,pe,pa,ae,momentum,pressure,thrust){
+
+let box=document.getElementById("formulaDisplay");
+
+box.innerHTML=`
+
+<div class="formula">
+Rocket Thrust Formula
+</div>
+
+<div class="calcStep">
+F = ṁVe + (Pe − Pa)Ae
+</div>
+
+<br>
+
+<div class="calcStep">
+Momentum Thrust = ṁ × Ve
+</div>
+
+<div class="calcStep">
+= ${m} × ${ve}
+</div>
+
+<div class="calcStep">
+= ${momentum.toFixed(2)} N
+</div>
+
+<br>
+
+<div class="calcStep">
+Pressure Thrust = (Pe − Pa) × Ae
+</div>
+
+<div class="calcStep">
+= (${pe} − ${pa}) × ${ae}
+</div>
+
+<div class="calcStep">
+= ${pressure.toFixed(2)} N
+</div>
+
+<br>
+
+<div class="calcStep">
+Total Thrust
+</div>
+
+<div class="calcStep">
+F = ${momentum.toFixed(2)} + ${pressure.toFixed(2)}
+</div>
+
+<div class="calcStep">
+<b>F = ${thrust.toFixed(2)} N</b>
+</div>
+
+`;
+
+box.classList.add("show");
+
+}
+
+</script>
+
+</body>
+</html>
